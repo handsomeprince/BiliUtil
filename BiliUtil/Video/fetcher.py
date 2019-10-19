@@ -50,10 +50,14 @@ class Fetcher:
             for video in video_list:
                 video.sync(cookie, quality)
                 if name_pattern == Util.Config.SET_AS_NAME:
+                    video_name = Util.legalize_name(album.name)
+                    video_name = '{}_P{}_{}'.format(video_name, video.page, video.quality[1])
+                elif name_pattern == Util.Config.SET_AS_PAGE:
                     video_name = Util.legalize_name(video.name)
+                    video_name = 'P{}_{}_{}'.format(video.page, video_name, video.quality[1])
                 else:
                     video_name = video.aid
-                video_name = '{}_P{}_{}'.format(video_name, video.page, video.quality[1])
+                    video_name = '{}_P{}_{}'.format(video_name, video.page, video.quality[1])
 
                 self.info_list.append({
                     'obj': self.obj,
