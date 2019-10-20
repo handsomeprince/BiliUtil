@@ -40,12 +40,17 @@ class Task:
         # 保存视频并转码
         if no_repeat and os.path.exists(os.path.abspath('{}/{}.mp4'.format(self.path, self.name))):
             return None
+        section_list = []
         if self.level == 'old_version':
-            Util.aria2c_pull(self.aid, self.path, self.name + '.mp4', self.video, show_process)
-            return self.aid
+            for section in self.video:
+                section_name = "%02d_%s" % (section, self.name)
+                Util.aria2c_pull(self.aid, self.path, section_name + '.flv', self.video[section], show_process)
+                section_list.append(section_name)
         elif self.level == 'new_version':
-            Util.aria2c_pull(self.aid, self.path, self.name + '.aac', self.audio, show_process)
-            Util.aria2c_pull(self.aid, self.path, self.name + '.flv', self.video, show_process)
-            Util.ffmpeg_merge(self.path, self.name, show_process)
-            sys.stdout.flush()
-            return self.aid
+            for section in self.video:
+                section_name = "%02d_%s" % (section, self.name)
+                Util.aria2c_pull(self.aid, self.path, section_name + '.aac', self.audio[section], show_process)
+                Util.aria2c_pull(self.aid, self.path, section_name + '.flv', self.video[section], show_process)
+                section_list.append(section_name)
+        Util.ffmpeg_merge(self.path, section_list, show_process)
+        return self.aid

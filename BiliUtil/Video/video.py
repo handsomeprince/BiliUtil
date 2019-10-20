@@ -42,6 +42,8 @@ class Video:
         json_data = Util.http_get(**http_request)
 
         # 自动识别不同的数据
+        self.video = dict()
+        self.audio = dict()
         self.format = json_data['data']['format']
         self.length = json_data['data']['timelength']
         self.quality = Util.Config.Quality.INDEX[json_data['data']['quality']]
@@ -51,22 +53,22 @@ class Video:
             audio_obj = json_data['data']['dash']['audio'][0]
             self.height = video_obj['height']
             self.width = video_obj['width']
-            self.video = list([video_obj['baseUrl']])
-            self.audio = list([audio_obj['baseUrl']])
+            self.video[1] = [video_obj['baseUrl']]
+            self.audio[1] = [audio_obj['baseUrl']]
             if video_obj['backup_url']:
                 for backup in video_obj['backup_url']:
-                    self.video.append(backup)
+                    self.video[1].append(backup)
             if audio_obj['backup_url']:
                 for backup in audio_obj['backup_url']:
-                    self.video.append(backup)
-
+                    self.audio[1].append(backup)
         elif 'durl' in json_data['data']:
             self.level = 'old_version'
-            video_obj = json_data['data']['durl'][-1]
-            self.video = list([video_obj['url']])
-            if video_obj['backup_url']:
-                for backup in video_obj['backup_url']:
-                    self.video.append(backup)
+            # 视频分段控制
+            for index, section in enumerate(json_data['data']['durl']):
+                self.video[index + 1] = list([section['url']])
+                if section['backup_url']:
+                    for backup in section['backup_url']:
+                        self.video[index + 1].append(backup)
 
         # 返回视频信息
         return copy.deepcopy(vars(self))

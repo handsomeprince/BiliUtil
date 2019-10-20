@@ -1,6 +1,7 @@
 # coding=utf-8
 import os
 import re
+import sys
 import time
 import json
 import requests
@@ -154,6 +155,7 @@ def legalize_name(name):
 
 
 def aria2c_pull(aid, path, name, url_list, show_process=False):
+    print(json.dumps(list(url_list)))
     # 设置输出信息
     if show_process:
         out_pipe = None
@@ -165,30 +167,60 @@ def aria2c_pull(aid, path, name, url_list, show_process=False):
     proxies += ' --https-proxy="{}"'.format(Config.HTTPS_PROXY) if Config.HTTPS_PROXY is not None else ""
 
     referer = 'https://www.bilibili.com/video/av' + str(aid)
-    url = '"{}"'.format('" "'.join(url_list))
+    url = '"{}"'.format('" "'.join(url_list))  # 多个URL并发下载
     shell = 'aria2c -c -k 1M -x {} -d "{}" -o "{}" --referer="{}" {} {}'
     shell = shell.format(len(url_list), path, name, referer, proxies, url)
     process = subprocess.Popen(shell, stdout=out_pipe, stderr=out_pipe, shell=True)
     process.wait()
 
 
-def ffmpeg_merge(path, name, show_process=False):
+def ffmpeg_merge(path, section_list, show_process=False):
     if show_process:
         out_pipe = None
     else:
-        out_pipe = subprocess.PIPE
-    flv_file = os.path.abspath('{}/{}.flv'.format(path, name))
-    aac_file = os.path.abspath('{}/{}.aac'.format(path, name))
-    mp4_file = os.path.abspath('{}/{}.mp4'.format(path, name))
-    if os.path.exists(flv_file) and os.path.exists(aac_file):
-        shell = 'ffmpeg -i "{}" -i "{}" -c copy -f mp4 -y "{}"'
-        shell = shell.format(flv_file, aac_file, mp4_file)
-        process = subprocess.Popen(shell, stdout=out_pipe, stderr=out_pipe, shell=True)
-        process.wait()
-        os.remove(flv_file)
-        os.remove(aac_file)
-    else:
-        raise RunningError('找不到下载的音视频文件')
+        out_pipe = subprocess.DEVNULL
+
+    # 完成新版本文件的合并
+    for name in section_list:
+        flv_file = os.path.abspath('{}/{}.flv'.format(path, name))
+        aac_file = os.path.abspath('{}/{}.aac'.format(path, name))
+        if os.path.exists(flv_file):
+            if os.path.exists(aac_file):
+                shell = 'ffmpeg -i "{}" -i "{}" -c copy -f mp4 -y "{}"'
+                shell = shell.format(flv_file, aac_file, flv_file)
+                process = subprocess.Popen(shell, stdout=out_pipe, stderr=out_pipe, shell=True)
+                process.wait()
+                # os.remove(flv_file)
+                # os.remove(aac_file)
+            else:
+                pass  # 无需合并的旧版本视频
+        else:
+            raise RunningError('找不到下载的视频文件')
+
+    # """
+    # 完成多个片段的合并
+    # 拼接模板: ffmpeg -i 1.flv -i 2.flv
+    # -filter_complex "[0:0] [0:1] [1:0] [1:1] concat=n=2:v=1:a=1 [v] [a]"
+    # -map "[v]" -map "[a]" -f mp4 -c copy -y output.mp4
+    # """
+    # shell = 'ffmpeg {} -filter_complex "{} concat=n={}:v=1:a=1 [v] [a]" ' \
+    #         '-map "[v]" -map "[a]" -f mp4 -y "{}.mp4"'
+    # input_file = ['-i "{}.flv"'.format(os.path.abspath('{}/{}'.format(path, name))) for name in section_list]
+    # input_track = ["[{}:0] [{}:1]".format(index, index) for index in range(len(section_list))]
+    # mp4_file = os.path.abspath('{}/{}.mp4'.format(path, section_list[0][3:]))
+    # shell = shell.format(" ".join(input_file), " ".join(input_track), len(section_list), mp4_file)
+
+    """
+    完成多个片段的合并
+    拼接模板: ffmpeg -i  'concat:01_3947271.flv|02_3947271.flv'  -c copy -f mp4 -y test.mp4
+    """
+    shell = 'ffmpeg -i "concat:{}" -c copy -f mp4 -y {}.mp4'
+    input_file = ['{}.flv'.format(name) for name in section_list]
+    shell = shell.format("|".join(input_file), section_list[0][3:])
+
+    process = subprocess.Popen(shell, cwd=path, stdout=out_pipe, stderr=out_pipe, shell=True)
+    process.wait()
+    sys.stdout.flush()
 
 
 class ParameterError(Exception):

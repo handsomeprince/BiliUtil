@@ -78,7 +78,7 @@ class Album:
 
         video_list = []
         for index, info in enumerate(self.video_info):
-            cv = Video.Video(self.aid, info['cid'], info['part'], index+1)
+            cv = Video.Video(self.aid, info[0], info[1], index+1)
             video_list.append(cv)
 
         return video_list

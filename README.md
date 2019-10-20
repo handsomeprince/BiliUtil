@@ -495,7 +495,7 @@ video_info = video.sync(
   - 未登录--->480P
   - 已登录--->1080P
   - 大会员--->1080P60FPS / 1080P+
-- 关键的cookie存在与发往`*.bilibili.com`域下，发往其他域的请求中不包含该信息。至于如何在浏览器中获取Cookie，请移步：[如何在浏览器中获取Cookie](http://baidux.tinoy.cn/?q=%E5%A6%82%E4%BD%95%E5%9C%A8%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%AD%E8%8E%B7%E5%8F%96Cookie)
+- 关键的cookie存在与发往`*.bilibili.com`域下，发往其他域的请求中不包含该信息。至于如何在浏览器中获取Cookie，请移步：[如何在浏览器中获取Cookie](https://baidux.tinoy.cn/?q=%E5%A6%82%E4%BD%95%E5%9C%A8%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%AD%E8%8E%B7%E5%8F%96Cookie)
 
 ### 什么是专辑Album和视频Video有什么区别？
 
